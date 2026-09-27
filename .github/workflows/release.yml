@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Test
+        run: dotnet test ZapretManager.sln -c Release
+
+      - name: Build exe
+        shell: pwsh
+        run: ./tools/publish.ps1
+
+      # Имя ассета ищет самообновление менеджера: ZapretManager-<версия>-win-x64.exe.
+      - name: Prepare release asset
+        id: asset
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          [xml]$project = Get-Content src/ZapretManager.App/ZapretManager.App.csproj
+          $projectVersion = @($project.Project.PropertyGroup.Version | Where-Object { $_ })[0]
+          if ($projectVersion -ne $version) {
+            throw "Tag $version does not match <Version>$projectVersion</Version> in the project."
+          }
+          $name = "ZapretManager-$version-win-x64.exe"
+          Copy-Item "artifacts/ZapretManager/win-x64/Zapret Manager.exe" $name
+          $hash = (Get-FileHash $name -Algorithm SHA256).Hash.ToLowerInvariant()
+          "name=$name" >> $env:GITHUB_OUTPUT
+          "sha256=$hash" >> $env:GITHUB_OUTPUT
+
+      - name: Publish release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $notes = @"
+          **Скачать:** ``${{ steps.asset.outputs.name }}`` ниже. Запустите файл и нажмите «Установить» — программа поставится для текущего пользователя и дальше обновляется сама.
+
+          У файла нет цифровой подписи, поэтому Windows SmartScreen может показать предупреждение: «Подробнее» → «Выполнить в любом случае». Файл собран из исходников этого тега в GitHub Actions.
+
+          SHA-256: ``${{ steps.asset.outputs.sha256 }}``
+          "@
+          gh release create "${{ github.ref_name }}" "${{ steps.asset.outputs.name }}" --title "Zapret Manager ${{ github.ref_name }}" --notes $notes

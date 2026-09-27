@@ -1,0 +1,31 @@
+# .NET / IDE
+**/bin/
+**/obj/
+.vs/
+*.csproj.user
+*.user
+
+# Local AI agent files
+.agent/
+AGENTS.md
+
+# Local builds and publish output
+artifacts/
+publish/
+
+# Runtime and user state
+runtime/
+updates/
+backup/
+backups/
+downloads/
+temp/
+logs/
+config.json
+config.json.invalid-*
+*.log
+
+# OS metadata
+Thumbs.db
+Desktop.ini
+.DS_Store

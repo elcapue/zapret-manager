@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ZapretManager.App": {
+      "commandName": "Project",
+      "commandLineArgs": "--no-install"
+    }
+  }
+}

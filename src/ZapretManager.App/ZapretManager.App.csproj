@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\assets\branding\zapret-manager.ico</ApplicationIcon>
+    <AssemblyName>Zapret Manager</AssemblyName>
+    <Version>0.1.0</Version>
+    <Product>Zapret Manager</Product>
+    <Description>Unofficial GUI manager for Flowseal zapret-discord-youtube</Description>
+    <Copyright>Copyright (c) 2026 Zapret Manager contributors</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\assets\branding\zapret-manager.ico" LogicalName="ZapretManager.App.Assets.Branding.zapret-manager.ico" />
+    <EmbeddedResource Include="..\..\assets\branding\zapret-manager-tray-32.png" LogicalName="ZapretManager.App.Assets.Branding.zapret-manager-tray-32.png" />
+    <EmbeddedResource Include="..\..\assets\branding\zapret-manager-mark-128.png" LogicalName="ZapretManager.App.Assets.Branding.zapret-manager-mark-128.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>ZapretManager.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>
