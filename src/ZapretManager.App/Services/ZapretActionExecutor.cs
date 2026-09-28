@@ -13,6 +13,7 @@ public sealed class ZapretActionExecutor
     private readonly Func<IZapretRunner> _runnerFactory;
     private readonly Func<ZapretStatus> _detectStatus;
     private readonly Func<IStrategyProbe> _probeFactory;
+    private readonly TimeSpan? _settleDelay;
 
     public ZapretActionExecutor(
         ConfigService configService,
@@ -22,7 +23,8 @@ public sealed class ZapretActionExecutor
         IWinwsProcessInspector processInspector,
         Func<IZapretRunner>? runnerFactory = null,
         Func<ZapretStatus>? detectStatus = null,
-        Func<IStrategyProbe>? probeFactory = null)
+        Func<IStrategyProbe>? probeFactory = null,
+        TimeSpan? settleDelay = null)
     {
         _configService = configService;
         _runtimeLayout = runtimeLayout;
@@ -32,6 +34,7 @@ public sealed class ZapretActionExecutor
         _runnerFactory = runnerFactory ?? (() => new BatStrategyRunner(_commandRunner, _config));
         _detectStatus = detectStatus ?? (() => new ZapretDetectionService().Detect());
         _probeFactory = probeFactory ?? (() => new HttpStrategyProbe());
+        _settleDelay = settleDelay;
     }
 
     public async Task<ZapretActionResponse> ExecuteAsync(
@@ -110,8 +113,8 @@ public sealed class ZapretActionExecutor
         var selector = new StrategyAutoSelectionService(
             runner,
             _probeFactory(),
+            settleDelay: _settleDelay,
             targets: StrategyTargetCatalog.Load(_runtimeLayout.RuntimeDirectory));
-
         StrategyAutoSelectionResult result;
         try
         {
