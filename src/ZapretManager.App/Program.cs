@@ -91,8 +91,7 @@ static class Program
             RefreshInstallRegistration(installPaths, logger);
         }
 
-        var configPath = Path.Combine(AppContext.BaseDirectory, "config.json");
-        var configService = new ConfigService(configPath);
+        var configService = new ConfigService(runtimeLayout.ConfigPath);
         var bootstrapResult = new AppBootstrapper(configService, runtimeLayout).Initialize();
         var bootstrapService = new RuntimeBootstrapService(runtimeLayout);
         if (bootstrapService.ShouldOfferBootstrap() && !launchOptions.IsAutostart)
@@ -108,16 +107,29 @@ static class Program
             }
         }
 
+        var commandRunner = new Infrastructure.CommandRunner();
+        var processInspector = new WinwsProcessInspector();
+        var services = new AppServices(
+            configService,
+            bootstrapResult.Config,
+            runtimeLayout,
+            logger,
+            commandRunner,
+            processInspector,
+            new ProcessSupervisor(processInspector, bootstrapResult.Config),
+            new AutostartService(commandRunner, executablePath),
+            new ZapretActionExecutor(configService, runtimeLayout, bootstrapResult.Config, commandRunner, processInspector));
+
         if (bootstrapResult.Config.StartWithWindows && !launchOptions.IsAutostart)
         {
-            var autostartResult = new AutostartService(new Infrastructure.CommandRunner(), executablePath).EnsureEnabled();
+            var autostartResult = services.AutostartService.EnsureEnabled();
             if (!autostartResult.IsSuccess)
             {
                 logger.Info(autostartResult.Message);
             }
         }
 
-        Application.Run(new TrayApplicationContext(singleInstance, launchOptions.IsAutostart));
+        Application.Run(new TrayApplicationContext(singleInstance, services, launchOptions.IsAutostart));
     }
 
     /// <summary>Версия в «Приложениях» меняется после самообновления; заодно запись восстанавливается, если её удалили.</summary>

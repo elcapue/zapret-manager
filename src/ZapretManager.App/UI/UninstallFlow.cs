@@ -37,7 +37,7 @@ internal static class UninstallFlow
         }
 
         // Если менеджер когда-то завершился аварийно, его winws.exe мог остаться — останавливаем только его.
-        var config = new ConfigService(Path.Combine(AppContext.BaseDirectory, "config.json")).LoadOrCreate();
+        var config = new ConfigService(RuntimeLayout.ForDirectory(AppContext.BaseDirectory).ConfigPath).LoadOrCreate();
         var stop = new ProcessSupervisor(new WinwsProcessInspector(), config).StopManagedProcess();
         if (stop.Status == ZapretRunStatus.CommandFailed)
         {

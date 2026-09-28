@@ -10,8 +10,11 @@ public sealed partial class TrayApplicationContext : ApplicationContext
     private readonly ConfigService _configService;
     private readonly RuntimeLayout _runtimeLayout;
     private readonly AppConfig _config;
-    private readonly FileLogger _logger;
+    private readonly IAppLogger _logger;
+    private readonly ICommandRunner _commandRunner;
+    private readonly IWinwsProcessInspector _processInspector;
     private readonly ProcessSupervisor _processSupervisor;
+    private readonly ZapretActionExecutor _actionExecutor;
     private readonly TrayIconSet _trayIcons;
     private readonly NotifyIcon _notifyIcon;
     private readonly TrayNotificationService _notifications;
@@ -28,19 +31,18 @@ public sealed partial class TrayApplicationContext : ApplicationContext
     private readonly SingleInstanceService _singleInstance;
     private System.Windows.Forms.Timer? _autostartTimer;
 
-    public TrayApplicationContext(SingleInstanceService singleInstance, bool startHidden = false)
+    public TrayApplicationContext(SingleInstanceService singleInstance, AppServices services, bool startHidden = false)
     {
         _singleInstance = singleInstance;
-        var configPath = Path.Combine(AppContext.BaseDirectory, "config.json");
-        _configService = new ConfigService(configPath);
-        _runtimeLayout = RuntimeLayout.ForDirectory(AppContext.BaseDirectory);
-        var bootstrapper = new AppBootstrapper(_configService, _runtimeLayout);
-        var bootstrapResult = bootstrapper.Initialize();
-        _config = bootstrapResult.Config;
-        _logger = new FileLogger(_runtimeLayout);
-        _processSupervisor = new ProcessSupervisor(new WinwsProcessInspector(), _config);
-        var executablePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "Zapret Manager.exe");
-        _autostartService = new AutostartService(new CommandRunner(), executablePath);
+        _configService = services.ConfigService;
+        _runtimeLayout = services.RuntimeLayout;
+        _config = services.Config;
+        _logger = services.Logger;
+        _commandRunner = services.CommandRunner;
+        _processInspector = services.ProcessInspector;
+        _processSupervisor = services.ProcessSupervisor;
+        _autostartService = services.AutostartService;
+        _actionExecutor = services.ActionExecutor;
         _logger.Info("Zapret Manager started.");
 
         _state = DetectState();
@@ -274,8 +276,7 @@ public sealed partial class TrayApplicationContext : ApplicationContext
     {
         // Start/Stop синхронно ждут появления/завершения winws.exe (до 5–10 с) —
         // выполняем вне UI-потока, чтобы окно и трей не зависали.
-        var executor = new ZapretActionExecutor(_configService, _runtimeLayout, _config);
-        return Task.Run(() => executor.ExecuteAsync(action, progress, cancellationToken), CancellationToken.None);
+        return Task.Run(() => _actionExecutor.ExecuteAsync(action, progress, cancellationToken), CancellationToken.None);
     }
 
     private void StopExistingZapretWithConfirmation(bool requireConfirmation)
@@ -348,8 +349,8 @@ public sealed partial class TrayApplicationContext : ApplicationContext
     private ExistingZapretStopService CreateExistingZapretStopService()
     {
         return new ExistingZapretStopService(
-            new CommandRunner(),
-            new WinwsProcessInspector(),
+            _commandRunner,
+            _processInspector,
             _runtimeLayout.RuntimeDirectory);
     }
 

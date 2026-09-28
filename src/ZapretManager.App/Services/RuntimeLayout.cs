@@ -9,6 +9,7 @@ public sealed class RuntimeLayout
         TempDirectory = Path.Combine(BaseDirectory, "temp");
         BackupsDirectory = Path.Combine(BaseDirectory, "backups");
         LogsDirectory = Path.Combine(BaseDirectory, "logs");
+        ConfigPath = Path.Combine(BaseDirectory, "config.json");
     }
 
     public string BaseDirectory { get; }
@@ -20,6 +21,8 @@ public sealed class RuntimeLayout
     public string BackupsDirectory { get; }
 
     public string LogsDirectory { get; }
+
+    public string ConfigPath { get; }
 
     public static RuntimeLayout ForDirectory(string baseDirectory)
     {

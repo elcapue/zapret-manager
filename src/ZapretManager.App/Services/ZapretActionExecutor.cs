@@ -8,12 +8,30 @@ public sealed class ZapretActionExecutor
     private readonly ConfigService _configService;
     private readonly RuntimeLayout _runtimeLayout;
     private readonly AppConfig _config;
+    private readonly ICommandRunner _commandRunner;
+    private readonly IWinwsProcessInspector _processInspector;
+    private readonly Func<IZapretRunner> _runnerFactory;
+    private readonly Func<ZapretStatus> _detectStatus;
+    private readonly Func<IStrategyProbe> _probeFactory;
 
-    public ZapretActionExecutor(ConfigService configService, RuntimeLayout runtimeLayout, AppConfig config)
+    public ZapretActionExecutor(
+        ConfigService configService,
+        RuntimeLayout runtimeLayout,
+        AppConfig config,
+        ICommandRunner commandRunner,
+        IWinwsProcessInspector processInspector,
+        Func<IZapretRunner>? runnerFactory = null,
+        Func<ZapretStatus>? detectStatus = null,
+        Func<IStrategyProbe>? probeFactory = null)
     {
         _configService = configService;
         _runtimeLayout = runtimeLayout;
         _config = config;
+        _commandRunner = commandRunner;
+        _processInspector = processInspector;
+        _runnerFactory = runnerFactory ?? (() => new BatStrategyRunner(_commandRunner, _config));
+        _detectStatus = detectStatus ?? (() => new ZapretDetectionService().Detect());
+        _probeFactory = probeFactory ?? (() => new HttpStrategyProbe());
     }
 
     public async Task<ZapretActionResponse> ExecuteAsync(
@@ -47,10 +65,10 @@ public sealed class ZapretActionExecutor
 
     private ZapretActionResponse StopExisting()
     {
-        var status = new ZapretDetectionService().Detect();
+        var status = _detectStatus();
         var result = new ExistingZapretStopService(
-            new CommandRunner(),
-            new WinwsProcessInspector(),
+            _commandRunner,
+            _processInspector,
             _runtimeLayout.RuntimeDirectory).StopExisting(status);
         if (result.IsSuccess)
         {
@@ -66,14 +84,14 @@ public sealed class ZapretActionExecutor
         IProgress<StrategyAutoSelectionProgress>? progress,
         CancellationToken cancellationToken)
     {
-        var status = new ZapretDetectionService().Detect();
+        var status = _detectStatus();
         var runner = CreateRunner();
-        var supervisor = new ProcessSupervisor(new WinwsProcessInspector(), _config);
+        var supervisor = new ProcessSupervisor(_processInspector, _config);
         var wasRunning = status.ZapretServiceRunning || supervisor.ReconcileManagedProcess() is not null;
 
         if (status.ZapretServiceExists)
         {
-            var removal = new ZapretServiceRemovalService(new CommandRunner()).RemoveForStrategyTests(status);
+            var removal = new ZapretServiceRemovalService(_commandRunner).RemoveForStrategyTests(status);
             if (!removal.IsSuccess)
             {
                 return new ZapretActionResponse(ZapretActionOutcome.Failed, removal.Message);
@@ -91,7 +109,7 @@ public sealed class ZapretActionExecutor
         var strategies = StrategyService.DiscoverStrategies(_runtimeLayout.RuntimeDirectory, _config.SelectedStrategy);
         var selector = new StrategyAutoSelectionService(
             runner,
-            new HttpStrategyProbe(),
+            _probeFactory(),
             targets: StrategyTargetCatalog.Load(_runtimeLayout.RuntimeDirectory));
 
         StrategyAutoSelectionResult result;
@@ -124,7 +142,7 @@ public sealed class ZapretActionExecutor
     }
 
     /// <summary>zapret работал до автовыбора — запускаем выбранную (новую лучшую или прежнюю) стратегию.</summary>
-    private string RestoreRunningState(BatStrategyRunner runner)
+    private string RestoreRunningState(IZapretRunner runner)
     {
         var start = runner.Start(GetSelectedStrategy());
         return start.IsSuccess
@@ -132,9 +150,9 @@ public sealed class ZapretActionExecutor
             : "Не удалось снова включить zapret: " + start.Message;
     }
 
-    private BatStrategyRunner CreateRunner()
+    private IZapretRunner CreateRunner()
     {
-        return new BatStrategyRunner(new CommandRunner(), _config);
+        return _runnerFactory();
     }
 
     private StrategyInfo? GetSelectedStrategy()
