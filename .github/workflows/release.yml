@@ -14,6 +14,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Падаем сразу, если тег не совпадает с <Version> — до тестов и сборки.
+      - name: Verify tag matches project version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          [xml]$project = Get-Content src/ZapretManager.App/ZapretManager.App.csproj
+          $projectVersion = @($project.Project.PropertyGroup.Version | Where-Object { $_ })[0]
+          if ($projectVersion -ne $version) {
+            throw "Tag $version does not match <Version>$projectVersion</Version> in the project."
+          }
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
@@ -31,11 +42,6 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}".TrimStart('v')
-          [xml]$project = Get-Content src/ZapretManager.App/ZapretManager.App.csproj
-          $projectVersion = @($project.Project.PropertyGroup.Version | Where-Object { $_ })[0]
-          if ($projectVersion -ne $version) {
-            throw "Tag $version does not match <Version>$projectVersion</Version> in the project."
-          }
           $name = "ZapretManager-$version-win-x64.exe"
           Copy-Item "artifacts/ZapretManager/win-x64/Zapret Manager.exe" $name
           $hash = (Get-FileHash $name -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -54,4 +60,4 @@ jobs:
 
           SHA-256: ``${{ steps.asset.outputs.sha256 }}``
           "@
-          gh release create "${{ github.ref_name }}" "${{ steps.asset.outputs.name }}" --title "Zapret Manager ${{ github.ref_name }}" --notes $notes
+          gh release create "${{ github.ref_name }}" "${{ steps.asset.outputs.name }}" THIRD_PARTY_NOTICES.md LICENSE --title "Zapret Manager ${{ github.ref_name }}" --notes $notes

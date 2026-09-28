@@ -16,3 +16,9 @@ jobs:
 
       - name: Test
         run: dotnet test ZapretManager.sln -c Release
+
+      # Single-file publish ломается иначе, чем обычная сборка — прогоняем на каждый push,
+      # чтобы не узнавать о поломке в момент релиза.
+      - name: Build single-file exe
+        shell: pwsh
+        run: ./tools/publish.ps1
