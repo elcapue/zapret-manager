@@ -26,6 +26,17 @@ static class Program
         var runtimeLayout = RuntimeLayout.ForDirectory(AppContext.BaseDirectory);
         var logger = new FileLogger(runtimeLayout);
 
+        // Страховка на случай исключений вне обработанных catch: хотя бы оставляем след в логе.
+        Application.ThreadException += (_, eventArgs) =>
+            logger.Error("UI thread exception.", eventArgs.Exception);
+        AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) =>
+        {
+            if (eventArgs.ExceptionObject is Exception exception)
+            {
+                logger.Error("Unhandled exception.", exception);
+            }
+        };
+
         if (!ElevationService.IsRunningAsAdministrator())
         {
             if (launchOptions.IsUninstall)

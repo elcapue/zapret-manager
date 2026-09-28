@@ -87,6 +87,11 @@ public sealed class UpdateService
                 $"Обновление до {release.TagName} скачано и проверено.",
                 preparedUpdate);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Отмена — не ошибка скачивания: вызывающий код сам решает, как её показать.
+            throw;
+        }
         catch (Exception ex)
         {
             return new UpdatePrepareResult(UpdateApplyStatus.Failed, ex.Message, null);

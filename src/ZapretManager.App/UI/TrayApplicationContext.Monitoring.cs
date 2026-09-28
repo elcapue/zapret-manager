@@ -47,11 +47,19 @@ public sealed partial class TrayApplicationContext
             return;
         }
 
-        var previous = _state;
-        UpdateState();
-        if (previous != _state)
+        // Детектирование ходит по файлам, процессам и SCM — исключение здесь не должно ронять приложение.
+        try
         {
-            _mainForm.RefreshState();
+            var previous = _state;
+            UpdateState();
+            if (previous != _state)
+            {
+                _mainForm.RefreshState();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error("Status refresh failed.", ex);
         }
     }
 

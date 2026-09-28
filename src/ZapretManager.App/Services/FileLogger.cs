@@ -10,6 +10,7 @@ public interface IAppLogger
 public sealed class FileLogger : IAppLogger
 {
     private readonly string _logPath;
+    private readonly object _writeGate = new();
 
     public FileLogger(RuntimeLayout layout)
     {
@@ -28,13 +29,25 @@ public sealed class FileLogger : IAppLogger
 
     private void Write(string level, string message, Exception? exception)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(_logPath)!);
         var line = $"{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss zzz} [{level}] {message}";
         if (exception is not null)
         {
             line += Environment.NewLine + exception;
         }
 
-        File.AppendAllText(_logPath, line + Environment.NewLine);
+        // Логгер вызывается в том числе из catch-блоков и фоновых задач:
+        // он не должен сам стать источником исключений или гонок записи.
+        try
+        {
+            lock (_writeGate)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_logPath)!);
+                File.AppendAllText(_logPath, line + Environment.NewLine);
+            }
+        }
+        catch (Exception)
+        {
+            // Некуда сообщить о сбое лога — просто не падаем.
+        }
     }
 }

@@ -126,8 +126,18 @@ public sealed partial class TrayApplicationContext : ApplicationContext
             return;
         }
 
-        UpdateState();
-        TrayMenuFactory.Populate(menu, _state, GetStrategies(), _trayMenuActions);
+        try
+        {
+            UpdateState();
+            TrayMenuFactory.Populate(menu, _state, GetStrategies(), _trayMenuActions);
+        }
+        catch (Exception ex)
+        {
+            // Меню откроется пустым — лучше, чем упасть из-за сбоя детектирования.
+            _logger.Error("Tray menu refresh failed.", ex);
+            return;
+        }
+
         // Пустое меню WinForms открывает с Cancel = true; после заполнения его нужно разрешить явно.
         args.Cancel = false;
     }
@@ -319,6 +329,15 @@ public sealed partial class TrayApplicationContext : ApplicationContext
             }
 
             ThemedMessageBox.Show(result.Message, "Zapret Manager", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error("Stop existing zapret failed.", ex);
+            ThemedMessageBox.Show(
+                "Не удалось остановить внешний zapret.\n\n" + ex.Message,
+                "Zapret Manager",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
         }
         finally
         {

@@ -60,8 +60,27 @@ public sealed partial class TrayApplicationContext
 
     private async Task InstallManagerUpdateAsync(ManagerUpdateService service, ManagerUpdateCheck check)
     {
+        // Скачивание идёт без gate: оно длительное и не должно блокировать действия с zapret и выход.
+        // Gate нужен только на короткую подмену exe.
+        string downloaded;
+        try
+        {
+            downloaded = await service.DownloadAsync(check.Asset!, _runtimeLayout.TempDirectory, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error("Manager update download failed.", ex);
+            ThemedMessageBox.Show(
+                $"Не удалось обновить Zapret Manager.\n\n{ex.Message}",
+                "Zapret Manager",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            return;
+        }
+
         if (!await _zapretActionGate.WaitAsync(0))
         {
+            File.Delete(downloaded);
             _notifications.ShowInformation("Сейчас выполняется действие с zapret. Обновите менеджер чуть позже.");
             return;
         }
@@ -70,7 +89,6 @@ public sealed partial class TrayApplicationContext
         try
         {
             var executablePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, InstallPaths.ExecutableName);
-            var downloaded = await service.DownloadAsync(check.Asset!, _runtimeLayout.TempDirectory, CancellationToken.None);
             string? previous;
             try
             {

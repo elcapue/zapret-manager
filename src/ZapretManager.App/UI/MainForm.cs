@@ -39,6 +39,7 @@ public sealed class MainForm : Form
     private readonly ThemedToolTip _toolTip = new();
     private bool _loadingStrategies;
     private bool _isStrategyAutoSelectionRunning;
+    private bool _strategySelectionEnabled = true;
     private Stopwatch? _strategyElapsed;
 
     public MainForm(
@@ -187,7 +188,6 @@ public sealed class MainForm : Form
             }
 
             _onStrategySelected(strategy);
-            RefreshState();
         };
 
         _autoSelectButton = CreateButton("Автовыбор", 284, 32, onAutoSelectStrategy, width: 152);
@@ -314,7 +314,8 @@ public sealed class MainForm : Form
 
     public void SetStrategySelectionEnabled(bool enabled)
     {
-        RunOnUiThread(() => _strategyPicker.Enabled = enabled);
+        _strategySelectionEnabled = enabled;
+        RunOnUiThread(() => _strategyPicker.Enabled = enabled && _strategyPicker.Items.Count > 0);
     }
 
     public void RefreshState()
@@ -333,7 +334,7 @@ public sealed class MainForm : Form
         try
         {
             _strategyPicker.SetItems(strategies, selected);
-            _strategyPicker.Enabled = strategies.Count > 0;
+            _strategyPicker.Enabled = _strategySelectionEnabled && strategies.Count > 0;
         }
         finally
         {
