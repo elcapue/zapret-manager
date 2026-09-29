@@ -9,7 +9,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>..\..\assets\branding\zapret-manager.ico</ApplicationIcon>
     <AssemblyName>Zapret Manager</AssemblyName>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Product>Zapret Manager</Product>
     <Description>Unofficial GUI manager for Flowseal zapret-discord-youtube</Description>
     <Copyright>Copyright (c) 2026 Zapret Manager contributors</Copyright>
