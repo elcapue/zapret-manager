@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 
 namespace ZapretManager.App.UI;
@@ -43,11 +44,38 @@ public static class UiTheme
     public static readonly Color StatusExternal = Color.FromArgb(255, 196, 70);
     public static readonly Color StatusNeutral = Color.FromArgb(198, 198, 198);
 
+    // Шрифты живут всё время работы приложения и раздаются только отсюда:
+    // контролы не должны освобождать полученный Font.
+    private static readonly ConcurrentDictionary<(string Family, float Size, FontStyle Style), Font> FontCache = new();
+
+    public static Font GetFont(float size, FontStyle style = FontStyle.Regular, string family = "Segoe UI")
+    {
+        return FontCache.GetOrAdd((family, size, style), key => new Font(key.Family, key.Size, key.Style, GraphicsUnit.Point));
+    }
+
+    /// <summary>Моноширинный шрифт с проверкой наличия семейства; результат кешируется.</summary>
+    public static Font GetMonoFont(float size, FontStyle style = FontStyle.Regular)
+    {
+        return FontCache.GetOrAdd(("monospace", size, style), _ =>
+        {
+            foreach (var family in new[] { "Cascadia Mono", "Consolas" })
+            {
+                using var test = new Font(family, size, style, GraphicsUnit.Point);
+                if (test.Name.Equals(family, StringComparison.OrdinalIgnoreCase))
+                {
+                    return new Font(family, size, style, GraphicsUnit.Point);
+                }
+            }
+
+            return new Font(FontFamily.GenericMonospace, size, style, GraphicsUnit.Point);
+        });
+    }
+
     public static void ApplyWindow(Form form)
     {
         form.BackColor = WindowBack;
         form.ForeColor = Text;
-        form.Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
+        form.Font = GetFont(10F);
         form.HandleCreated += (_, _) => ApplyDarkTitleBar(form);
         form.Activated += (_, _) => ApplyDarkTitleBar(form);
         form.Deactivate += (_, _) => ApplyDarkTitleBar(form);
@@ -84,7 +112,7 @@ public static class UiTheme
     {
         label.BackColor = Color.Transparent;
         label.ForeColor = MutedText;
-        label.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold, GraphicsUnit.Point);
+        label.Font = GetFont(8.5F, FontStyle.Bold);
         label.UseCompatibleTextRendering = false;
     }
 
@@ -98,7 +126,7 @@ public static class UiTheme
     {
         label.BackColor = Color.Transparent;
         label.ForeColor = color ?? Text;
-        label.Font = new Font("Segoe UI", size, style, GraphicsUnit.Point);
+        label.Font = GetFont(size, style);
     }
 
     public static void StyleButton(Button button, UiButtonKind kind = UiButtonKind.Secondary)
@@ -128,7 +156,7 @@ public static class UiTheme
             UiButtonKind.Danger => DangerPressed,
             _ => SurfacePressed
         };
-        button.Font = new Font("Segoe UI Semibold", 10.5F, FontStyle.Bold, GraphicsUnit.Point);
+        button.Font = GetFont(10.5F, FontStyle.Bold, "Segoe UI Semibold");
         button.EnabledChanged += (_, _) =>
         {
             var colors = GetButtonColors(kind, button.Enabled, isPressed: false, isHovered: false);
@@ -178,26 +206,9 @@ public static class UiTheme
     {
         checkBox.BackColor = Color.Transparent;
         checkBox.ForeColor = Text;
-        checkBox.Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
+        checkBox.Font = GetFont(10F);
     }
 
-    /// <summary>
-    /// Моноширинный шрифт с fallback: Cascadia Mono есть не на всех системах,
-    /// Consolas — на любой Windows.
-    /// </summary>
-    public static Font CreateMonoFont(float size, FontStyle style = FontStyle.Regular)
-    {
-        foreach (var family in new[] { "Cascadia Mono", "Consolas" })
-        {
-            using var test = new Font(family, size, style, GraphicsUnit.Point);
-            if (test.Name.Equals(family, StringComparison.OrdinalIgnoreCase))
-            {
-                return new Font(family, size, style, GraphicsUnit.Point);
-            }
-        }
-
-        return new Font(FontFamily.GenericMonospace, size, style, GraphicsUnit.Point);
-    }
 
     public static void StyleProgressBar(ProgressBar progressBar)
     {

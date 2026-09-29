@@ -31,7 +31,6 @@ public sealed class GitHubReleaseClientTests
         var release = await client.GetLatestReleaseAsync(CancellationToken.None);
 
         Assert.Equal("1.10.2", release.TagName);
-        Assert.Equal("https://github.com/Flowseal/zapret-discord-youtube/releases/tag/1.10.2", release.ReleasePageUrl);
         Assert.NotNull(release.ZipAsset);
         Assert.Equal("zapret-discord-youtube-1.10.2.zip", release.ZipAsset!.Name);
         Assert.Equal("sha256:abc123", release.ZipAsset.Digest);

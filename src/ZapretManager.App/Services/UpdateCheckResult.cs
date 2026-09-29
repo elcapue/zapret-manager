@@ -15,13 +15,11 @@ public sealed class UpdateCheckResult
         UpdateAvailability availability,
         string currentVersion,
         string latestVersion,
-        string releasePageUrl,
         ReleaseAssetInfo? zipAsset)
     {
         Availability = availability;
         CurrentVersion = currentVersion;
         LatestVersion = latestVersion;
-        ReleasePageUrl = releasePageUrl;
         ZipAsset = zipAsset;
     }
 
@@ -30,8 +28,6 @@ public sealed class UpdateCheckResult
     public string CurrentVersion { get; }
 
     public string LatestVersion { get; }
-
-    public string ReleasePageUrl { get; }
 
     public ReleaseAssetInfo? ZipAsset { get; }
 }

@@ -47,11 +47,6 @@ public sealed class AppInstaller
         key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
     }
 
-    public bool IsRegistered()
-    {
-        using var key = Registry.CurrentUser.OpenSubKey(_paths.UninstallRegistryKey);
-        return key is not null;
-    }
 
     /// <summary>Убирает ярлыки и запись в «Приложениях». Папку удаляет <see cref="ScheduleDirectoryDeletion"/>.</summary>
     public void RemoveIntegration()

@@ -101,7 +101,7 @@ public sealed class PowerStatusButton : Button
 
         if (_state == ZapretState.External)
         {
-            using var actionFont = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point);
+            var actionFont = UiTheme.GetFont(8.5F);
             TextRenderer.DrawText(
                 e.Graphics,
                 "Действия ›",
@@ -179,7 +179,7 @@ public sealed class PowerStatusButton : Button
         var textWidth = Width - Inset - SwitchWidth - 12 - textLeft;
         var hasDetail = !string.IsNullOrEmpty(_detailText);
 
-        using var titleFont = new Font("Segoe UI Semibold", 11F, FontStyle.Bold, GraphicsUnit.Point);
+        var titleFont = UiTheme.GetFont(11F, FontStyle.Bold, "Segoe UI Semibold");
         TextRenderer.DrawText(
             graphics,
             _state.ToDisplayText(),
@@ -193,7 +193,7 @@ public sealed class PowerStatusButton : Button
             return;
         }
 
-        using var detailFont = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point);
+        var detailFont = UiTheme.GetFont(8.5F);
         TextRenderer.DrawText(
             graphics,
             _detailText,

@@ -71,7 +71,7 @@ public sealed class ManagerUpdateServiceTests
 
     private static GitHubReleaseInfo Release(string tag, params ReleaseAssetInfo[] assets)
     {
-        return new GitHubReleaseInfo(tag, "https://example.test/release", zipAsset: null, assets);
+        return new GitHubReleaseInfo(tag, null, assets);
     }
 
     private static string Sha256(byte[] bytes)

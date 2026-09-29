@@ -17,7 +17,7 @@ public sealed class UpdateServiceTests
         File.WriteAllText(Path.Combine(layout.RuntimeDirectory, "old.txt"), "old runtime");
         var zipBytes = CreateZapretReleaseZip("zapret-discord-youtube-1.10.2");
         var asset = new ReleaseAssetInfo("zapret-discord-youtube-1.10.2.zip", "https://example.test/update.zip", "sha256:" + Sha256Hex(zipBytes));
-        var release = new GitHubReleaseInfo("1.10.2", "https://example.test/release", asset);
+        var release = new GitHubReleaseInfo("1.10.2", asset);
         var config = new AppConfig { LastKnownVersion = "1.10.1" };
         var service = new UpdateService(new HttpClient(new BytesHttpHandler(zipBytes)), layout);
 
@@ -41,7 +41,7 @@ public sealed class UpdateServiceTests
         File.WriteAllText(Path.Combine(layout.RuntimeDirectory, "old.txt"), "old runtime");
         var zipBytes = CreateZapretReleaseZip("zapret-discord-youtube-1.10.2");
         var asset = new ReleaseAssetInfo("zapret-discord-youtube-1.10.2.zip", "https://example.test/update.zip", "sha256:bad");
-        var release = new GitHubReleaseInfo("1.10.2", "https://example.test/release", asset);
+        var release = new GitHubReleaseInfo("1.10.2", asset);
         var config = new AppConfig { LastKnownVersion = "1.10.1" };
         var service = new UpdateService(new HttpClient(new BytesHttpHandler(zipBytes)), layout);
 
@@ -65,7 +65,7 @@ public sealed class UpdateServiceTests
             "zapret-discord-youtube-1.10.2.zip",
             "https://example.test/update.zip",
             "sha256:" + Sha256Hex(zipBytes));
-        var release = new GitHubReleaseInfo("1.10.2", "https://example.test/release", asset);
+        var release = new GitHubReleaseInfo("1.10.2", asset);
         var service = new UpdateService(new HttpClient(new BytesHttpHandler(zipBytes)), layout);
 
         var result = await service.PrepareUpdateAsync(release, CancellationToken.None);
@@ -90,7 +90,7 @@ public sealed class UpdateServiceTests
         File.WriteAllText(Path.Combine(layout.RuntimeDirectory, "lists", "list-general-user.txt"), "user-domain.example");
         var zipBytes = CreateZapretReleaseZip("zapret-discord-youtube-1.10.2");
         var asset = new ReleaseAssetInfo("zapret-discord-youtube-1.10.2.zip", "https://example.test/update.zip", "sha256:" + Sha256Hex(zipBytes));
-        var release = new GitHubReleaseInfo("1.10.2", "https://example.test/release", asset);
+        var release = new GitHubReleaseInfo("1.10.2", asset);
         var config = new AppConfig { LastKnownVersion = "1.10.1" };
         var service = new UpdateService(new HttpClient(new BytesHttpHandler(zipBytes)), layout);
 
@@ -122,7 +122,7 @@ public sealed class UpdateServiceTests
             ipsetAllContent: "203.0.113.113/32\r\n",
             ipsetBackupContent: "fresh-list");
         var asset = new ReleaseAssetInfo("zapret-discord-youtube-1.10.2.zip", "https://example.test/update.zip", "sha256:" + Sha256Hex(zipBytes));
-        var release = new GitHubReleaseInfo("1.10.2", "https://example.test/release", asset);
+        var release = new GitHubReleaseInfo("1.10.2", asset);
         var service = new UpdateService(new HttpClient(new BytesHttpHandler(zipBytes)), layout);
 
         var result = await service.ApplyUpdateAsync(release, new AppConfig(), CancellationToken.None);
@@ -144,7 +144,7 @@ public sealed class UpdateServiceTests
             ipsetAllContent: "203.0.113.113/32\r\n",
             ipsetBackupContent: "fresh-list");
         var asset = new ReleaseAssetInfo("zapret-discord-youtube-1.10.2.zip", "https://example.test/update.zip", "sha256:" + Sha256Hex(zipBytes));
-        var release = new GitHubReleaseInfo("1.10.2", "https://example.test/release", asset);
+        var release = new GitHubReleaseInfo("1.10.2", asset);
         var service = new UpdateService(new HttpClient(new BytesHttpHandler(zipBytes)), layout);
 
         var result = await service.ApplyUpdateAsync(release, new AppConfig(), CancellationToken.None);
@@ -170,12 +170,12 @@ public sealed class UpdateServiceTests
         var config = new AppConfig();
 
         var first = await service.ApplyUpdateAsync(
-            new GitHubReleaseInfo("1.0.0", "https://example.test/1.0.0", asset),
+            new GitHubReleaseInfo("1.0.0", asset),
             config,
             CancellationToken.None);
         File.WriteAllText(Path.Combine(layout.RuntimeDirectory, "version-marker.txt"), "1.0.0");
         var second = await service.ApplyUpdateAsync(
-            new GitHubReleaseInfo("1.1.0", "https://example.test/1.1.0", asset),
+            new GitHubReleaseInfo("1.1.0", asset),
             config,
             CancellationToken.None);
 

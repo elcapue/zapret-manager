@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace ZapretManager.App.UI;
 
@@ -59,7 +60,17 @@ public static class AppAssets
 
         using var bitmap = new Bitmap(stream);
         using var resized = new Bitmap(bitmap, new Size(size, size));
-        return Icon.FromHandle(resized.GetHicon());
+        var handle = resized.GetHicon();
+        try
+        {
+            using var borrowed = Icon.FromHandle(handle);
+            // Clone копирует HICON, поэтому исходный handle можно сразу освободить.
+            return (Icon)borrowed.Clone();
+        }
+        finally
+        {
+            DestroyIcon(handle);
+        }
     }
 
     private static Stream? OpenBrandingResource(string fileName)
@@ -74,4 +85,8 @@ public static class AppAssets
         memory.Position = 0;
         return memory;
     }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool DestroyIcon(IntPtr handle);
 }

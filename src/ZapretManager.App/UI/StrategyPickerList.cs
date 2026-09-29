@@ -34,7 +34,7 @@ internal sealed class StrategyPickerList : Control
             ControlStyles.Selectable,
             true);
         BackColor = UiTheme.Surface;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+        Font = UiTheme.GetFont(9F);
         TabStop = true;
         AccessibleRole = AccessibleRole.List;
         AccessibleName = "Доступные стратегии";

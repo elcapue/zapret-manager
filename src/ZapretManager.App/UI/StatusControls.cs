@@ -47,7 +47,7 @@ public sealed class ScanProgressBar : Control
         base.OnPaint(e);
         UiDrawing.ConfigureSurfaceGraphics(e.Graphics);
 
-        using var monoFont = UiTheme.CreateMonoFont(8F);
+        var monoFont = UiTheme.GetMonoFont(8F);
 
         var countText = _total > 0 ? $"{Math.Min(_completed, _total)} / {_total}" : "— / —";
         TextRenderer.DrawText(

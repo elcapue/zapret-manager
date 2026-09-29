@@ -266,32 +266,6 @@ internal sealed class AppLogoTile : Control
     }
 }
 
-internal class RoundedPanel : Panel
-{
-    public int CornerRadius { get; set; } = 14;
-
-    public RoundedPanel()
-    {
-        SetStyle(
-            ControlStyles.UserPaint |
-            ControlStyles.AllPaintingInWmPaint |
-            ControlStyles.OptimizedDoubleBuffer |
-            ControlStyles.ResizeRedraw,
-            true);
-    }
-
-    protected override void OnPaintBackground(PaintEventArgs e)
-    {
-        e.Graphics.Clear(Parent?.BackColor ?? UiTheme.WindowBack);
-        UiDrawing.DrawRoundedSurface(
-            e.Graphics,
-            UiDrawing.GetInsetBounds(this),
-            CornerRadius,
-            BackColor,
-            UiTheme.Border);
-    }
-}
-
 internal sealed class ThemedSectionPanel : Panel
 {
     private readonly Label _titleLabel;

@@ -62,7 +62,7 @@ internal sealed class ThemedMessageBoxForm : Form
         // Многострочный TextBox переносит строку только по \r\n, а сообщения по всему приложению
         // собираются с \n — без нормализации текст склеивается в одну строку.
         text = text.ReplaceLineEndings("\r\n");
-        var messageFont = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+        var messageFont = UiTheme.GetFont(9F);
         var measured = TextRenderer.MeasureText(
             text,
             messageFont,

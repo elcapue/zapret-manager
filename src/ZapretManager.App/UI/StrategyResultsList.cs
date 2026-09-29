@@ -22,7 +22,7 @@ public sealed class StrategyResultsList : Control
             true);
 
         BackColor = Color.Transparent;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+        Font = UiTheme.GetFont(9F);
         TabStop = false;
         AccessibleRole = AccessibleRole.List;
         AccessibleName = "Лучшие стратегии последнего сканирования";
@@ -61,8 +61,8 @@ public sealed class StrategyResultsList : Control
 
         UiDrawing.ConfigureSurfaceGraphics(e.Graphics);
         var rowHeight = Math.Max(20F, Height / (float)_items.Count);
-        using var nameFont = UiTheme.CreateMonoFont(8.5F);
-        using var metricFont = UiTheme.CreateMonoFont(8F);
+        var nameFont = UiTheme.GetMonoFont(8.5F);
+        var metricFont = UiTheme.GetMonoFont(8F);
 
         for (var index = 0; index < _items.Count; index++)
         {

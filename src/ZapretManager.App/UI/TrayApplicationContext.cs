@@ -476,6 +476,7 @@ public sealed partial class TrayApplicationContext : ApplicationContext, IZapret
             _notifyIcon.Dispose();
             _trayIcons.Dispose();
             _autostartTimer?.Dispose();
+            _statusTimer.Dispose();
             _zapretActionGate.Dispose();
         }
 

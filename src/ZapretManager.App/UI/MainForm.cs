@@ -69,7 +69,7 @@ public sealed class MainForm : Form
             TextAlign = ContentAlignment.MiddleLeft
         };
         UiTheme.StyleLabel(titleLabel, UiTheme.Text, 10.5F);
-        titleLabel.Font = new Font("Segoe UI Semibold", 10.5F, FontStyle.Regular, GraphicsUnit.Point);
+        titleLabel.Font = UiTheme.GetFont(10.5F, FontStyle.Regular, "Segoe UI Semibold");
 
         _runtimeVersionLabel = new Label
         {
@@ -130,7 +130,7 @@ public sealed class MainForm : Form
         _restartButton = CreateButton("↻  Перезапустить", CardWidth - CardInset - 128, 5, commands.RestartZapret, width: 128, UiButtonKind.Subtle);
         _restartButton.Name = "RestartButton";
         _restartButton.Height = 24;
-        _restartButton.Font = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point);
+        _restartButton.Font = UiTheme.GetFont(8.5F);
         _restartButton.AccessibleName = "Перезапустить zapret";
         _restartButton.AccessibleDescription = "Перезапустить управляемый процесс zapret с выбранной стратегией.";
         _toolTip.SetToolTip(_restartButton, _restartButton.AccessibleDescription);
@@ -246,7 +246,7 @@ public sealed class MainForm : Form
             UiButtonKind.Subtle);
         clearDiscordCacheButton.Name = "ClearDiscordCacheButton";
         clearDiscordCacheButton.Height = 26;
-        clearDiscordCacheButton.Font = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point);
+        clearDiscordCacheButton.Font = UiTheme.GetFont(8.5F);
         clearDiscordCacheButton.AccessibleName = "Очистить кеш Discord";
         clearDiscordCacheButton.AccessibleDescription = "Закрыть Discord и удалить его кеш — помогает, если после смены стратегии Discord не грузится.";
         _toolTip.SetToolTip(clearDiscordCacheButton, clearDiscordCacheButton.AccessibleDescription);

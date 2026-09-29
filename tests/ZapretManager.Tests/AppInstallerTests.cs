@@ -64,7 +64,7 @@ public sealed class AppInstallerTests : IDisposable
 
         Assert.False(File.Exists(paths.StartMenuShortcut));
         Assert.False(File.Exists(paths.DesktopShortcut));
-        Assert.False(installer.IsRegistered());
+        Assert.Null(Registry.CurrentUser.OpenSubKey(paths.UninstallRegistryKey));
     }
 
     [Fact]

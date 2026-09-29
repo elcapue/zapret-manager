@@ -36,7 +36,7 @@ public sealed class GitHubReleaseClient
             .ToArray();
         var zipAsset = assets.FirstOrDefault(asset => asset.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
 
-        return new GitHubReleaseInfo(dto.TagName, dto.HtmlUrl, zipAsset, assets);
+        return new GitHubReleaseInfo(dto.TagName, zipAsset, assets);
     }
 
     private sealed class GitHubReleaseDto
@@ -44,8 +44,6 @@ public sealed class GitHubReleaseClient
         [JsonPropertyName("tag_name")]
         public string TagName { get; set; } = string.Empty;
 
-        [JsonPropertyName("html_url")]
-        public string HtmlUrl { get; set; } = string.Empty;
 
         [JsonPropertyName("assets")]
         public List<GitHubReleaseAssetDto> Assets { get; set; } = [];

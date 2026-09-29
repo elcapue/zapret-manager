@@ -16,7 +16,6 @@ public static class UpdateCheckService
                 UpdateAvailability.UnknownCurrentVersion,
                 "неизвестна",
                 release.TagName,
-                release.ReleasePageUrl,
                 release.ZipAsset);
         }
 
@@ -28,7 +27,6 @@ public static class UpdateCheckService
             availability,
             currentVersion,
             release.TagName,
-            release.ReleasePageUrl,
             release.ZipAsset);
     }
 

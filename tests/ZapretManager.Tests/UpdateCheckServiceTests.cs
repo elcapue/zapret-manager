@@ -14,7 +14,7 @@ public sealed class UpdateCheckServiceTests
     public void Compare_WhenReleaseIsNewer_ReturnsUpdateAvailable(string current, string latest)
     {
         var asset = new ReleaseAssetInfo($"zapret-discord-youtube-{latest}.zip", "https://example.test/update.zip", "sha256:abc");
-        var release = new GitHubReleaseInfo(latest, "https://example.test/release", asset);
+        var release = new GitHubReleaseInfo(latest, asset);
 
         var result = UpdateCheckService.Compare(current, release);
 
@@ -33,7 +33,7 @@ public sealed class UpdateCheckServiceTests
     public void Compare_WhenInstalledIsSameOrNewer_ReturnsUpToDate(string current, string latest)
     {
         // Более новая установленная версия бывает, когда последний релиз отозвали: предлагать откат нельзя.
-        var release = new GitHubReleaseInfo(latest, "https://example.test/release", null);
+        var release = new GitHubReleaseInfo(latest, null);
 
         var result = UpdateCheckService.Compare(current, release);
 
@@ -43,7 +43,7 @@ public sealed class UpdateCheckServiceTests
     [Fact]
     public void Compare_WhenCurrentVersionIsUnknown_ReturnsUnknownCurrentVersion()
     {
-        var release = new GitHubReleaseInfo("1.10.2", "https://example.test/release", null);
+        var release = new GitHubReleaseInfo("1.10.2", null);
 
         var result = UpdateCheckService.Compare(currentVersion: null, release);
 

@@ -24,7 +24,7 @@ public sealed class StrategyPicker : Control
 
         BackColor = UiTheme.SurfaceRaised;
         ForeColor = UiTheme.Text;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+        Font = UiTheme.GetFont(9F);
         Cursor = Cursors.Hand;
         TabStop = true;
         AccessibleRole = AccessibleRole.ComboBox;
