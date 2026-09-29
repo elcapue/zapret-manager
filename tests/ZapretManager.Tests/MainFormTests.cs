@@ -79,19 +79,10 @@ public sealed class MainFormTests
     [Fact]
     public void RefreshState_ShowsRuntimeVersionInHeaderInsteadOfPowerButton()
     {
-        using var form = new MainForm(
-            getState: () => ZapretState.Stopped,
-            getStrategies: () => Array.Empty<StrategyInfo>(),
-            onStrategySelected: _ => { },
-            onStart: () => { },
-            onStop: () => { },
-            onRestart: () => { },
-            onStopExisting: () => { },
-            onCheckUpdates: () => { },
-            onAutoSelectStrategy: () => { },
-            onCancelAutoSelect: () => { },
-            onOpenSettings: () => { },
-            getRuntimeVersionText: () => "Flowseal 1.10.3");
+        using var form = new MainForm(new FakeZapretManagerCommands
+        {
+            RuntimeVersionTextProvider = () => "Flowseal 1.10.3"
+        });
 
         var version = form.Controls.OfType<Label>().Single(label => label.Name == "RuntimeVersionLabel");
         var title = form.Controls.OfType<Label>().Single(label => label.Name == "AppTitleLabel");
@@ -106,8 +97,8 @@ public sealed class MainFormTests
     [Fact]
     public void Constructor_ClearDiscordCacheIsLabeledFooterActionUnderStrategyBlock()
     {
-        var clicked = false;
-        using var form = CreateForm(ZapretState.Stopped, onClearDiscordCache: () => clicked = true);
+        var commands = new FakeZapretManagerCommands();
+        using var form = new MainForm(commands);
 
         var clear = form.Controls.OfType<Button>().Single(button => button.Name == "ClearDiscordCacheButton");
         var strategySection = GetAllControls(form).OfType<Panel>().Single(panel => panel.Name == "StrategySection");
@@ -118,7 +109,7 @@ public sealed class MainFormTests
 
         Assert.Contains("Discord", clear.Text);
         Assert.True(clear.Top > strategySection.Bottom);
-        Assert.True(clicked);
+        Assert.Equal(["ClearDiscordCache"], commands.Calls);
     }
 
     [Fact]
@@ -183,17 +174,15 @@ public sealed class MainFormTests
     [Fact]
     public void PowerButton_ExternalClickUsesExistingExternalActionFlow()
     {
-        var externalActionCalls = 0;
-        using var form = CreateForm(
-            ZapretState.External,
-            onStopExisting: () => externalActionCalls++);
+        var commands = new FakeZapretManagerCommands { StateProvider = () => ZapretState.External };
+        using var form = new MainForm(commands);
         var power = GetAllControls(form).OfType<PowerStatusButton>().Single();
 
         typeof(Button)
             .GetMethod("OnClick", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(power, [EventArgs.Empty]);
 
-        Assert.Equal(1, externalActionCalls);
+        Assert.Equal(["StopExistingZapret"], commands.Calls);
     }
 
     [Fact]
@@ -367,26 +356,15 @@ public sealed class MainFormTests
         ZapretState state,
         LastStrategyScanResult? lastScan = null,
         string statusHint = "",
-        Action? onStopExisting = null,
         Func<ZapretState>? stateProvider = null,
-        Func<string>? statusHintProvider = null,
-        Action? onClearDiscordCache = null)
+        Func<string>? statusHintProvider = null)
     {
-        return new MainForm(
-            getState: stateProvider ?? (() => state),
-            getStrategies: () => Array.Empty<StrategyInfo>(),
-            onStrategySelected: _ => { },
-            onStart: () => { },
-            onStop: () => { },
-            onRestart: () => { },
-            onStopExisting: onStopExisting ?? (() => { }),
-            onCheckUpdates: () => { },
-            onAutoSelectStrategy: () => { },
-            onCancelAutoSelect: () => { },
-            onOpenSettings: () => { },
-            getLastStrategyScan: () => lastScan,
-            getStatusHint: statusHintProvider ?? (() => statusHint),
-            onClearDiscordCache: onClearDiscordCache);
+        return new MainForm(new FakeZapretManagerCommands
+        {
+            StateProvider = stateProvider ?? (() => state),
+            LastStrategyScanProvider = () => lastScan,
+            StatusHintProvider = statusHintProvider ?? (() => statusHint)
+        });
     }
 
     /// <summary>Visible у непоказанной формы всегда false, поэтому читаем собственный флаг видимости контрола.</summary>

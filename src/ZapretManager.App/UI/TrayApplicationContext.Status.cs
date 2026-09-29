@@ -5,7 +5,7 @@ namespace ZapretManager.App.UI;
 public sealed partial class TrayApplicationContext
 {
     /// <summary>Подпись в переключателе: время работы и стратегия, выбранная стратегия или пояснение.</summary>
-    private string GetStatusHint()
+    public string GetStatusHint()
     {
         switch (_state)
         {
@@ -26,7 +26,7 @@ public sealed partial class TrayApplicationContext
     }
 
     /// <summary>Версия установленного runtime для шапки окна.</summary>
-    private string GetRuntimeVersionText()
+    public string GetRuntimeVersionText()
     {
         if (_state == ZapretState.RuntimeMissing)
         {

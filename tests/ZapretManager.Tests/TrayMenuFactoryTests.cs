@@ -13,7 +13,7 @@ public sealed class TrayMenuFactoryTests
     [InlineData(ZapretState.RuntimeMissing, "Статус: нет runtime", new string[0])]
     public void Create_ShowsOnlyActionsThatMatchState(ZapretState state, string statusText, string[] zapretActions)
     {
-        using var menu = TrayMenuFactory.Create(state, [], CreateActions());
+        using var menu = TrayMenuFactory.Create(state, [], new FakeZapretManagerCommands());
 
         var labels = menu.Items
             .OfType<ToolStripItem>()
@@ -39,10 +39,10 @@ public sealed class TrayMenuFactoryTests
     [Fact]
     public void Populate_ReplacesItemsWhenStateChanges()
     {
-        var actions = CreateActions();
-        using var menu = TrayMenuFactory.Create(ZapretState.Stopped, [], actions);
+        var commands = new FakeZapretManagerCommands();
+        using var menu = TrayMenuFactory.Create(ZapretState.Stopped, [], commands);
 
-        TrayMenuFactory.Populate(menu, ZapretState.Running, [], actions);
+        TrayMenuFactory.Populate(menu, ZapretState.Running, [], commands);
 
         var labels = menu.Items.OfType<ToolStripItem>().Select(item => item.Text).ToArray();
         Assert.Contains("Выключить", labels);
@@ -53,18 +53,15 @@ public sealed class TrayMenuFactoryTests
     [Fact]
     public void Create_ExternalItemUsesStopExistingFlow()
     {
-        var clicked = false;
-        using var menu = TrayMenuFactory.Create(
-            ZapretState.External,
-            [],
-            CreateActions(onStopExisting: () => clicked = true));
+        var commands = new FakeZapretManagerCommands();
+        using var menu = TrayMenuFactory.Create(ZapretState.External, [], commands);
 
         var item = Assert.IsType<ToolStripMenuItem>(menu.Items
             .OfType<ToolStripItem>()
             .Single(candidate => candidate.Text == "Внешний zapret..."));
         item.PerformClick();
 
-        Assert.True(clicked);
+        Assert.Equal(["StopExistingZapret"], commands.Calls);
     }
 
     [Fact]
@@ -75,12 +72,9 @@ public sealed class TrayMenuFactoryTests
             new StrategyInfo("general.bat", "C:/runtime/general.bat", isSelected: false),
             new StrategyInfo("general (ALT2).bat", "C:/runtime/general (ALT2).bat", isSelected: true)
         };
-        StrategyInfo? selected = null;
+        var commands = new FakeZapretManagerCommands();
 
-        using var menu = TrayMenuFactory.Create(
-            ZapretState.Stopped,
-            strategies,
-            CreateActions(onStrategySelected: strategy => selected = strategy));
+        using var menu = TrayMenuFactory.Create(ZapretState.Stopped, strategies, commands);
 
         var strategyMenu = GetStrategyMenu(menu);
         var strategyItems = strategyMenu.DropDownItems.OfType<ToolStripMenuItem>().Skip(1).ToArray();
@@ -91,43 +85,37 @@ public sealed class TrayMenuFactoryTests
 
         strategyItems[0].PerformClick();
 
-        Assert.Equal("general.bat", selected?.FileName);
+        Assert.Equal(["SelectStrategy:general.bat"], commands.Calls);
     }
 
     [Fact]
     public void Create_StrategyMenuStartsWithAutoSelect()
     {
-        var clicked = false;
+        var commands = new FakeZapretManagerCommands();
 
-        using var menu = TrayMenuFactory.Create(
-            ZapretState.Stopped,
-            [],
-            CreateActions(onAutoSelect: () => clicked = true));
+        using var menu = TrayMenuFactory.Create(ZapretState.Stopped, [], commands);
 
         var autoSelectItem = Assert.IsType<ToolStripMenuItem>(GetStrategyMenu(menu).DropDownItems[0]);
         Assert.Equal("Автовыбор...", autoSelectItem.Text);
 
         autoSelectItem.PerformClick();
 
-        Assert.True(clicked);
+        Assert.Equal(["RunStrategyAutoSelection"], commands.Calls);
     }
 
     [Fact]
     public void Create_ClearDiscordCacheItemInvokesHandler()
     {
-        var clicked = false;
+        var commands = new FakeZapretManagerCommands();
 
-        using var menu = TrayMenuFactory.Create(
-            ZapretState.Stopped,
-            [],
-            CreateActions(onClearDiscordCache: () => clicked = true));
+        using var menu = TrayMenuFactory.Create(ZapretState.Stopped, [], commands);
 
         var item = Assert.IsType<ToolStripMenuItem>(menu.Items
             .OfType<ToolStripItem>()
             .Single(candidate => candidate.Text == "Очистить кеш Discord..."));
         item.PerformClick();
 
-        Assert.True(clicked);
+        Assert.Equal(["ClearDiscordCache"], commands.Calls);
     }
 
     private static ToolStripMenuItem GetStrategyMenu(ContextMenuStrip menu)
@@ -135,25 +123,5 @@ public sealed class TrayMenuFactoryTests
         return Assert.IsType<ToolStripMenuItem>(menu.Items
             .OfType<ToolStripItem>()
             .Single(item => item.Text == "Стратегия"));
-    }
-
-    private static TrayMenuActions CreateActions(
-        Action? onStopExisting = null,
-        Action<StrategyInfo>? onStrategySelected = null,
-        Action? onAutoSelect = null,
-        Action? onClearDiscordCache = null)
-    {
-        return new TrayMenuActions(
-            OnOpenMainWindow: () => { },
-            OnStart: () => { },
-            OnStop: () => { },
-            OnRestart: () => { },
-            OnStopExisting: onStopExisting ?? (() => { }),
-            OnStrategySelected: onStrategySelected ?? (_ => { }),
-            OnAutoSelectStrategy: onAutoSelect ?? (() => { }),
-            OnClearDiscordCache: onClearDiscordCache ?? (() => { }),
-            OnCheckUpdates: () => { },
-            OnOpenSettings: () => { },
-            OnExit: () => { });
     }
 }

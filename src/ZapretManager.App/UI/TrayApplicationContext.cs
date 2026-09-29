@@ -5,7 +5,7 @@ using ZapretManager.App.Services;
 
 namespace ZapretManager.App.UI;
 
-public sealed partial class TrayApplicationContext : ApplicationContext
+public sealed partial class TrayApplicationContext : ApplicationContext, IZapretManagerCommands
 {
     private readonly ConfigService _configService;
     private readonly RuntimeLayout _runtimeLayout;
@@ -18,7 +18,6 @@ public sealed partial class TrayApplicationContext : ApplicationContext
     private readonly TrayIconSet _trayIcons;
     private readonly NotifyIcon _notifyIcon;
     private readonly TrayNotificationService _notifications;
-    private readonly TrayMenuActions _trayMenuActions;
     private readonly MainForm _mainForm;
     private readonly AutostartService _autostartService;
     private readonly SemaphoreSlim _zapretActionGate = new(1, 1);
@@ -47,18 +46,6 @@ public sealed partial class TrayApplicationContext : ApplicationContext
 
         _state = DetectState();
         _trayIcons = new TrayIconSet();
-        _trayMenuActions = new TrayMenuActions(
-            OnOpenMainWindow: ShowMainWindow,
-            OnStart: () => RunZapretAction(ZapretActionKind.Start),
-            OnStop: () => RunZapretAction(ZapretActionKind.Stop),
-            OnRestart: () => RunZapretAction(ZapretActionKind.Restart),
-            OnStopExisting: () => StopExistingZapretWithConfirmation(requireConfirmation: true),
-            OnStrategySelected: SelectStrategy,
-            OnAutoSelectStrategy: RunStrategyTests,
-            OnClearDiscordCache: ClearDiscordCache,
-            OnCheckUpdates: async () => await CheckUpdatesAsync(),
-            OnOpenSettings: OpenSettings,
-            OnExit: ExitApplication);
 
         var trayMenu = new ContextMenuStrip();
         trayMenu.Opening += OnTrayMenuOpening;
@@ -103,22 +90,7 @@ public sealed partial class TrayApplicationContext : ApplicationContext
 
     private MainForm BuildMainForm()
     {
-        return new MainForm(
-            getState: () => _state,
-            getStrategies: GetStrategies,
-            onStrategySelected: SelectStrategy,
-            onStart: () => RunZapretAction(ZapretActionKind.Start),
-            onStop: () => RunZapretAction(ZapretActionKind.Stop),
-            onRestart: () => RunZapretAction(ZapretActionKind.Restart),
-            onStopExisting: () => StopExistingZapretWithConfirmation(requireConfirmation: true),
-            onCheckUpdates: async () => await CheckUpdatesAsync(),
-            onAutoSelectStrategy: RunStrategyTests,
-            onCancelAutoSelect: CancelStrategyTests,
-            onOpenSettings: OpenSettings,
-            getLastStrategyScan: () => _config.LastStrategyScan,
-            getStatusHint: GetStatusHint,
-            onClearDiscordCache: ClearDiscordCache,
-            getRuntimeVersionText: GetRuntimeVersionText);
+        return new MainForm(this);
     }
 
     private void OnTrayMenuOpening(object? sender, CancelEventArgs args)
@@ -131,7 +103,7 @@ public sealed partial class TrayApplicationContext : ApplicationContext
         try
         {
             UpdateState();
-            TrayMenuFactory.Populate(menu, _state, GetStrategies(), _trayMenuActions);
+            TrayMenuFactory.Populate(menu, _state, GetStrategies(), this);
         }
         catch (Exception ex)
         {
@@ -191,7 +163,7 @@ public sealed partial class TrayApplicationContext : ApplicationContext
             : ZapretState.Stopped;
     }
 
-    private IReadOnlyList<StrategyInfo> GetStrategies()
+    public IReadOnlyList<StrategyInfo> GetStrategies()
     {
         return StrategyService.DiscoverStrategies(_runtimeLayout.RuntimeDirectory, _config.SelectedStrategy);
     }
@@ -370,7 +342,7 @@ public sealed partial class TrayApplicationContext : ApplicationContext
         return string.Join(Environment.NewLine, items);
     }
 
-    private void OpenSettings()
+    public void OpenSettings()
     {
         using var form = new SettingsForm(_config, SetCheckForUpdatesOnStartup, SetStartWithWindows);
         if (_mainForm.Visible)
@@ -410,7 +382,7 @@ public sealed partial class TrayApplicationContext : ApplicationContext
         return true;
     }
 
-    private void ExitApplication()
+    public void ExitApplication()
     {
         _ = ExitApplicationAsync();
     }

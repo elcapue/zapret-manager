@@ -17,13 +17,8 @@ public sealed class MainForm : Form
     private const int HeaderControlSize = 32;
     private const int HeaderTextLeft = LayoutMargin + HeaderControlSize + 10;
 
-    private readonly Func<ZapretState> _getState;
-    private readonly Func<IReadOnlyList<StrategyInfo>> _getStrategies;
-    private readonly Func<LastStrategyScanResult?> _getLastStrategyScan;
-    private readonly Func<string> _getStatusHint;
-    private readonly Func<string> _getRuntimeVersionText;
+    private readonly IZapretManagerCommands _commands;
     private readonly Label _runtimeVersionLabel;
-    private readonly Action<StrategyInfo> _onStrategySelected;
     private readonly PowerStatusButton _powerButton;
     private readonly Button _restartButton;
     private readonly StrategyPicker _strategyPicker;
@@ -42,29 +37,9 @@ public sealed class MainForm : Form
     private bool _strategySelectionEnabled = true;
     private Stopwatch? _strategyElapsed;
 
-    public MainForm(
-        Func<ZapretState> getState,
-        Func<IReadOnlyList<StrategyInfo>> getStrategies,
-        Action<StrategyInfo> onStrategySelected,
-        Action onStart,
-        Action onStop,
-        Action onRestart,
-        Action onStopExisting,
-        Action onCheckUpdates,
-        Action onAutoSelectStrategy,
-        Action onCancelAutoSelect,
-        Action onOpenSettings,
-        Func<LastStrategyScanResult?>? getLastStrategyScan = null,
-        Func<string>? getStatusHint = null,
-        Action? onClearDiscordCache = null,
-        Func<string>? getRuntimeVersionText = null)
+    public MainForm(IZapretManagerCommands commands)
     {
-        _getState = getState;
-        _getStrategies = getStrategies;
-        _getLastStrategyScan = getLastStrategyScan ?? (() => null);
-        _getStatusHint = getStatusHint ?? (() => string.Empty);
-        _getRuntimeVersionText = getRuntimeVersionText ?? (() => string.Empty);
-        _onStrategySelected = onStrategySelected;
+        _commands = commands;
 
         Text = "Zapret Manager";
         Icon = AppAssets.LoadWindowIcon();
@@ -108,12 +83,12 @@ public sealed class MainForm : Form
         UiTheme.StyleLabel(_runtimeVersionLabel, UiTheme.MutedText, 8.5F);
         _toolTip.SetToolTip(_runtimeVersionLabel, "Установленная версия zapret (Flowseal)");
 
-        var checkUpdatesButton = CreateIconButton(UiIconKind.Update, 398, HeaderTop, onCheckUpdates, "Проверить обновления");
+        var checkUpdatesButton = CreateIconButton(UiIconKind.Update, 398, HeaderTop, commands.CheckUpdates, "Проверить обновления");
         checkUpdatesButton.Name = "CheckUpdatesButton";
         checkUpdatesButton.AccessibleName = "Проверить обновления";
         checkUpdatesButton.AccessibleDescription = "Проверить обновления Zapret Manager и zapret (Flowseal).";
 
-        var settingsButton = CreateIconButton(UiIconKind.Settings, 438, HeaderTop, onOpenSettings, "Настройки");
+        var settingsButton = CreateIconButton(UiIconKind.Settings, 438, HeaderTop, commands.OpenSettings, "Настройки");
         settingsButton.Name = "SettingsButton";
         settingsButton.AccessibleName = "Настройки";
         settingsButton.AccessibleDescription = "Открыть настройки менеджера.";
@@ -138,13 +113,13 @@ public sealed class MainForm : Form
             switch (_powerButton.StatusState)
             {
                 case ZapretState.Running:
-                    onStop();
+                    commands.StopZapret();
                     break;
                 case ZapretState.Stopped:
-                    onStart();
+                    commands.StartZapret();
                     break;
                 case ZapretState.External:
-                    onStopExisting();
+                    commands.StopExistingZapret();
                     break;
             }
         };
@@ -152,7 +127,7 @@ public sealed class MainForm : Form
         // Перезапуск имеет смысл только для работающего zapret, поэтому кнопка видна лишь во включённом состоянии.
         // Она стоит в строке заголовка карточки: когда её нет, под индикатором не остаётся дыры,
         // а сам индикатор не сдвигается под курсором при включении и выключении.
-        _restartButton = CreateButton("↻  Перезапустить", CardWidth - CardInset - 128, 5, onRestart, width: 128, UiButtonKind.Subtle);
+        _restartButton = CreateButton("↻  Перезапустить", CardWidth - CardInset - 128, 5, commands.RestartZapret, width: 128, UiButtonKind.Subtle);
         _restartButton.Name = "RestartButton";
         _restartButton.Height = 24;
         _restartButton.Font = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point);
@@ -187,15 +162,15 @@ public sealed class MainForm : Form
                 return;
             }
 
-            _onStrategySelected(strategy);
+            _commands.SelectStrategy(strategy);
         };
 
-        _autoSelectButton = CreateButton("Автовыбор", 284, 32, onAutoSelectStrategy, width: 152);
+        _autoSelectButton = CreateButton("Автовыбор", 284, 32, commands.RunStrategyAutoSelection, width: 152);
         _autoSelectButton.Name = "AutoSelectButton";
         _toolTip.SetToolTip(_autoSelectButton, "Проверить стратегии и автоматически выбрать лучшую.");
 
         // Кнопка «Остановить» занимает место «Автовыбор» на время сканирования.
-        _cancelAutoSelectButton = CreateButton("Остановить", 284, 32, onCancelAutoSelect, width: 152, UiButtonKind.Danger);
+        _cancelAutoSelectButton = CreateButton("Остановить", 284, 32, commands.CancelStrategyAutoSelection, width: 152, UiButtonKind.Danger);
         _cancelAutoSelectButton.Name = "CancelAutoSelectButton";
         _cancelAutoSelectButton.Visible = false;
         _toolTip.SetToolTip(_cancelAutoSelectButton, "Остановить текущий автовыбор стратегии.");
@@ -266,7 +241,7 @@ public sealed class MainForm : Form
             "Discord не грузится? Очистить кеш",
             (WindowWidth - 260) / 2,
             423,
-            onClearDiscordCache ?? (() => { }),
+            commands.ClearDiscordCache,
             width: 260,
             UiButtonKind.Subtle);
         clearDiscordCacheButton.Name = "ClearDiscordCacheButton";
@@ -320,14 +295,14 @@ public sealed class MainForm : Form
 
     public void RefreshState()
     {
-        var state = _getState();
+        var state = _commands.GetState();
         _powerButton.StatusState = state;
         _powerButton.Enabled = state != ZapretState.RuntimeMissing;
         _restartButton.Visible = state == ZapretState.Running;
-        _runtimeVersionLabel.Text = _getRuntimeVersionText();
+        _runtimeVersionLabel.Text = _commands.GetRuntimeVersionText();
         RefreshUptimeHint();
 
-        var strategies = _getStrategies();
+        var strategies = _commands.GetStrategies();
         var selected = strategies.FirstOrDefault(strategy => strategy.IsSelected);
 
         _loadingStrategies = true;
@@ -343,7 +318,7 @@ public sealed class MainForm : Form
 
         if (!_isStrategyAutoSelectionRunning)
         {
-            SetStrategyResults(GetLastScanRows(_getLastStrategyScan()));
+            SetStrategyResults(GetLastScanRows(_commands.GetLastStrategyScan()));
             LayoutStrategyResults(showCompletionDetails: !string.IsNullOrEmpty(_strategyResultLabel.Text));
         }
     }
@@ -397,7 +372,7 @@ public sealed class MainForm : Form
             SetStrategyResultMessage(result.Message, result.Notes);
             SetStrategyResults(result.IsSuccess
                 ? result.TopStrategies.Select(StrategyCheckFormatter.ToRow)
-                : GetLastScanRows(_getLastStrategyScan()));
+                : GetLastScanRows(_commands.GetLastStrategyScan()));
             LayoutStrategyResults(showCompletionDetails: true);
             SetAutoSelectMode(true);
         });
@@ -411,7 +386,7 @@ public sealed class MainForm : Form
             StopElapsedTimer();
             _strategyProgress.HideBar();
             SetStrategyResultMessage(message, []);
-            SetStrategyResults(GetLastScanRows(_getLastStrategyScan()));
+            SetStrategyResults(GetLastScanRows(_commands.GetLastStrategyScan()));
             LayoutStrategyResults(showCompletionDetails: true);
             SetAutoSelectMode(true);
         });
@@ -492,7 +467,7 @@ public sealed class MainForm : Form
 
     internal void RefreshUptimeHint()
     {
-        _powerButton.DetailText = _getStatusHint();
+        _powerButton.DetailText = _commands.GetStatusHint();
     }
 
     private void LayoutStrategyResults(bool showCompletionDetails)

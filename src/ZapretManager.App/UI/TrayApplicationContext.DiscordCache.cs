@@ -6,7 +6,7 @@ public sealed partial class TrayApplicationContext
 {
     private bool _discordCacheClearing;
 
-    private async void ClearDiscordCache()
+    public async void ClearDiscordCache()
     {
         if (_exitInProgress || _discordCacheClearing)
         {

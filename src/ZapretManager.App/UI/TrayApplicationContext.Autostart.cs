@@ -4,7 +4,7 @@ namespace ZapretManager.App.UI;
 
 public sealed partial class TrayApplicationContext
 {
-    private void ShowMainWindow()
+    public void ShowMainWindow()
     {
         if (!EnsureRuntimeAvailableForInteractiveUse())
         {

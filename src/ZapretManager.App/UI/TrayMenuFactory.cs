@@ -2,25 +2,12 @@ using ZapretManager.App.Core;
 
 namespace ZapretManager.App.UI;
 
-public sealed record TrayMenuActions(
-    Action OnOpenMainWindow,
-    Action OnStart,
-    Action OnStop,
-    Action OnRestart,
-    Action OnStopExisting,
-    Action<StrategyInfo> OnStrategySelected,
-    Action OnAutoSelectStrategy,
-    Action OnClearDiscordCache,
-    Action OnCheckUpdates,
-    Action OnOpenSettings,
-    Action OnExit);
-
 public static class TrayMenuFactory
 {
-    public static ContextMenuStrip Create(ZapretState state, IReadOnlyList<StrategyInfo> strategies, TrayMenuActions actions)
+    public static ContextMenuStrip Create(ZapretState state, IReadOnlyList<StrategyInfo> strategies, IZapretManagerCommands commands)
     {
         var menu = new ContextMenuStrip();
-        Populate(menu, state, strategies, actions);
+        Populate(menu, state, strategies, commands);
         return menu;
     }
 
@@ -32,7 +19,7 @@ public static class TrayMenuFactory
         ContextMenuStrip menu,
         ZapretState state,
         IReadOnlyList<StrategyInfo> strategies,
-        TrayMenuActions actions)
+        IZapretManagerCommands commands)
     {
         var previousItems = menu.Items.Cast<ToolStripItem>().ToArray();
         menu.Items.Clear();
@@ -44,9 +31,9 @@ public static class TrayMenuFactory
         menu.Items.Add(new ToolStripMenuItem("Статус: " + state.ToDisplayText().ToLowerInvariant()) { Enabled = false });
         menu.Items.Add(new ToolStripSeparator());
 
-        menu.Items.Add(Item("Открыть", actions.OnOpenMainWindow));
+        menu.Items.Add(Item("Открыть", commands.ShowMainWindow));
 
-        var zapretItems = CreateZapretItems(state, actions);
+        var zapretItems = CreateZapretItems(state, commands);
         if (zapretItems.Length > 0)
         {
             menu.Items.Add(new ToolStripSeparator());
@@ -55,24 +42,24 @@ public static class TrayMenuFactory
 
         menu.Items.Add(new ToolStripSeparator());
         var strategyMenu = new ToolStripMenuItem("Стратегия");
-        AddStrategyItems(strategyMenu, strategies, actions);
+        AddStrategyItems(strategyMenu, strategies, commands);
         menu.Items.Add(strategyMenu);
-        menu.Items.Add(Item("Очистить кеш Discord...", actions.OnClearDiscordCache));
-        menu.Items.Add(Item("Проверить обновления", actions.OnCheckUpdates));
-        menu.Items.Add(Item("Настройки", actions.OnOpenSettings));
+        menu.Items.Add(Item("Очистить кеш Discord...", commands.ClearDiscordCache));
+        menu.Items.Add(Item("Проверить обновления", commands.CheckUpdates));
+        menu.Items.Add(Item("Настройки", commands.OpenSettings));
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(Item("Выход", actions.OnExit));
+        menu.Items.Add(Item("Выход", commands.ExitApplication));
 
         UiTheme.StyleMenu(menu);
     }
 
-    private static ToolStripItem[] CreateZapretItems(ZapretState state, TrayMenuActions actions)
+    private static ToolStripItem[] CreateZapretItems(ZapretState state, IZapretManagerCommands commands)
     {
         return state switch
         {
-            ZapretState.Running => [Item("Выключить", actions.OnStop), Item("Перезапустить", actions.OnRestart)],
-            ZapretState.Stopped => [Item("Включить", actions.OnStart)],
-            ZapretState.External => [Item("Внешний zapret...", actions.OnStopExisting)],
+            ZapretState.Running => [Item("Выключить", commands.StopZapret), Item("Перезапустить", commands.RestartZapret)],
+            ZapretState.Stopped => [Item("Включить", commands.StartZapret)],
+            ZapretState.External => [Item("Внешний zapret...", commands.StopExistingZapret)],
             _ => []
         };
     }
@@ -80,9 +67,9 @@ public static class TrayMenuFactory
     private static void AddStrategyItems(
         ToolStripMenuItem strategyMenu,
         IReadOnlyList<StrategyInfo> strategies,
-        TrayMenuActions actions)
+        IZapretManagerCommands commands)
     {
-        strategyMenu.DropDownItems.Add(Item("Автовыбор...", actions.OnAutoSelectStrategy));
+        strategyMenu.DropDownItems.Add(Item("Автовыбор...", commands.RunStrategyAutoSelection));
         strategyMenu.DropDownItems.Add(new ToolStripSeparator());
 
         if (strategies.Count == 0)
@@ -97,7 +84,7 @@ public static class TrayMenuFactory
             {
                 Checked = strategy.IsSelected
             };
-            strategyItem.Click += (_, _) => actions.OnStrategySelected(strategy);
+            strategyItem.Click += (_, _) => commands.SelectStrategy(strategy);
             strategyMenu.DropDownItems.Add(strategyItem);
         }
     }

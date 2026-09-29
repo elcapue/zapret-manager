@@ -5,7 +5,7 @@ namespace ZapretManager.App.UI;
 
 public sealed partial class TrayApplicationContext
 {
-    private async void SelectStrategy(StrategyInfo strategy)
+    public async void SelectStrategy(StrategyInfo strategy)
     {
         if (_exitInProgress || string.Equals(_config.SelectedStrategy, strategy.FileName, StringComparison.OrdinalIgnoreCase))
         {
