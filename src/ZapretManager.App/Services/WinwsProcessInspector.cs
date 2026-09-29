@@ -64,17 +64,8 @@ public sealed class WinwsProcessInspector : IWinwsProcessInspector
                 return true;
             }
 
-            if (process.StartTime.ToUniversalTime() != processInfo.StartedAtUtc)
+            if (!MatchesExpectedProcess(process.StartTime.ToUniversalTime(), process.MainModule?.FileName, processInfo, out errorMessage))
             {
-                errorMessage = "PID уже принадлежит другому процессу.";
-                return false;
-            }
-
-            var executablePath = process.MainModule?.FileName;
-            if (string.IsNullOrWhiteSpace(executablePath) ||
-                !PathComparer.AreEqual(executablePath, processInfo.ExecutablePath))
-            {
-                errorMessage = "Путь процесса не совпадает с сохранённым runtime.";
                 return false;
             }
 
@@ -98,5 +89,32 @@ public sealed class WinwsProcessInspector : IWinwsProcessInspector
             errorMessage = ex.Message;
             return false;
         }
+    }
+
+    /// <summary>
+    /// Защита перед Kill: PID мог быть переиспользован чужим процессом.
+    /// Останавливаем, только если совпали время старта и путь exe из записи.
+    /// </summary>
+    internal static bool MatchesExpectedProcess(
+        DateTime actualStartedAtUtc,
+        string? actualExecutablePath,
+        WinwsProcessInfo expected,
+        out string errorMessage)
+    {
+        if (actualStartedAtUtc != expected.StartedAtUtc)
+        {
+            errorMessage = "PID уже принадлежит другому процессу.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(actualExecutablePath) ||
+            !PathComparer.AreEqual(actualExecutablePath, expected.ExecutablePath))
+        {
+            errorMessage = "Путь процесса не совпадает с сохранённым runtime.";
+            return false;
+        }
+
+        errorMessage = string.Empty;
+        return true;
     }
 }

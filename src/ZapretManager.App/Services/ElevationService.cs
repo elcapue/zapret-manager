@@ -41,7 +41,7 @@ public static class ElevationService
             Process.Start(startInfo);
             return true;
         }
-        catch (Win32Exception ex) when (ex.NativeErrorCode == 1223) // ERROR_CANCELLED
+        catch (Exception ex) when (IsElevationDeclinedByUser(ex))
         {
             logger.Info("Elevation declined by user.");
             return false;
@@ -51,5 +51,12 @@ public static class ElevationService
             logger.Error("Elevation restart failed.", ex);
             return false;
         }
+    }
+
+    /// <summary>Отказ пользователя в диалоге UAC (ERROR_CANCELLED) — единственный ожидаемый отказ runas.</summary>
+    internal static bool IsElevationDeclinedByUser(Exception exception)
+    {
+        const int ErrorCancelled = 1223;
+        return exception is Win32Exception { NativeErrorCode: ErrorCancelled };
     }
 }
