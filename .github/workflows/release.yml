@@ -60,4 +60,4 @@ jobs:
 
           SHA-256: ``${{ steps.asset.outputs.sha256 }}``
           "@
-          gh release create "${{ github.ref_name }}" "${{ steps.asset.outputs.name }}" THIRD_PARTY_NOTICES.md LICENSE --title "Zapret Manager ${{ github.ref_name }}" --notes $notes
+          gh release create "${{ github.ref_name }}" "${{ steps.asset.outputs.name }}" --title "Zapret Manager ${{ github.ref_name }}" --notes $notes
