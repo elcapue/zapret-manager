@@ -21,24 +21,19 @@ if (-not (Test-Path -LiteralPath $target -PathType Leaf)) {
 }
 
 # Работающий менеджер запущен с правами администратора, убить его отсюда нельзя. Просим его выйти
-# штатно тем же сигналом, что и удаление программы (SingleInstanceService, pipe привязан к папке).
+# штатно: служебный аргумент приложения сам вычислит имя pipe для папки установки и отправит
+# сигнал — протокол SingleInstanceService не дублируется здесь.
 function Request-ManagerExit {
-    $normalized = [System.IO.Path]::GetFullPath($installDirectory).TrimEnd('\', '/').ToUpperInvariant()
-    $hash = [System.Security.Cryptography.SHA256]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($normalized))
-    $pipeName = "ZapretManager.SingleInstance." + ([System.BitConverter]::ToString($hash) -replace '-', '')
-    $client = New-Object System.IO.Pipes.NamedPipeClientStream('.', $pipeName, [System.IO.Pipes.PipeDirection]::Out)
     try {
-        $client.Connect(2000)
-        $writer = New-Object System.IO.StreamWriter($client)
-        $writer.WriteLine('exit')
-        $writer.Flush()
-        return $true
+        $arguments = @(
+            '--request-primary-exit',
+            '"' + $installDirectory + '"'
+        )
+        $process = Start-Process -FilePath $source -ArgumentList $arguments -Wait -PassThru
+        return $process.ExitCode -eq 0
     }
     catch {
         return $false
-    }
-    finally {
-        $client.Dispose()
     }
 }
 

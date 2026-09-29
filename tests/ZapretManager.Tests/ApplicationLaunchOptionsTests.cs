@@ -26,6 +26,20 @@ public sealed class ApplicationLaunchOptionsTests
         Assert.True(ApplicationLaunchOptions.Parse(["--uninstall"]).IsUninstall);
     }
 
+    [Fact]
+    public void Parse_RequestPrimaryExit_TakesFollowingArgumentAsTargetDirectory()
+    {
+        var options = ApplicationLaunchOptions.Parse(["--request-primary-exit", @"C:\Zapret Manager"]);
+
+        Assert.Equal(@"C:\Zapret Manager", options.RequestPrimaryExitDirectory);
+    }
+
+    [Fact]
+    public void Parse_WithoutRequestPrimaryExit_HasNoTargetDirectory()
+    {
+        Assert.Null(ApplicationLaunchOptions.Parse(["--autostart"]).RequestPrimaryExitDirectory);
+    }
+
     [Theory]
     [InlineData(0, 0, 0, "00:00")]
     [InlineData(0, 8, 28, "08:28")]

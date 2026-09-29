@@ -23,7 +23,7 @@ public static class RuntimeValidator
         AddIfMissing(missingItems, runtimeDirectory, "bin/WinDivert.dll");
         AddIfMissing(missingItems, runtimeDirectory, "service.bat");
 
-        if (!Directory.Exists(runtimeDirectory) || Directory.GetFiles(runtimeDirectory, "general*.bat").Length == 0)
+        if (!Directory.Exists(runtimeDirectory) || Directory.GetFiles(runtimeDirectory, StrategyService.StrategyFilePattern).Length == 0)
         {
             missingItems.Add("general*.bat");
         }

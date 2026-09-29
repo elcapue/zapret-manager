@@ -33,11 +33,6 @@ public sealed class AutostartService
         return enabled ? Enable() : Disable();
     }
 
-    public AutostartUpdateResult EnsureEnabled()
-    {
-        return Enable();
-    }
-
     internal string BuildCreateArguments()
     {
         return $"/Create /TN \"{TaskName}\" /SC ONLOGON /DELAY 0000:05 /RL HIGHEST /IT /F /TR \"\\\"{_executablePath}\\\" --autostart\"";

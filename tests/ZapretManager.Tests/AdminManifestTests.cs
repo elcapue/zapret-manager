@@ -22,7 +22,12 @@ public sealed class AdminManifestTests
             .Single(element => element.Name.LocalName == "requestedExecutionLevel");
 
         Assert.Equal("asInvoker", requestedExecutionLevel.Attribute("level")?.Value);
-        Assert.Contains("<ApplicationManifest>app.manifest</ApplicationManifest>", File.ReadAllText(csprojPath));
+
+        var project = XDocument.Load(csprojPath);
+        var applicationManifest = project
+            .Descendants()
+            .Single(element => element.Name.LocalName == "ApplicationManifest");
+        Assert.Equal("app.manifest", applicationManifest.Value);
     }
 
     private static string FindProjectRoot()

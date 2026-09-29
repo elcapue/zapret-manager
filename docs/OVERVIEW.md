@@ -26,6 +26,8 @@
 | `System/` | Запуск внешних процессов (`CommandRunner`) |
 | `UI/` | Формы и тема: главное окно (`MainForm`), контролы (`PowerStatusButton` — строка-переключатель zapret; `StatusControls` — прогресс-бар автовыбора; `UiControls` — кнопки, панели, пикер стратегий), трей, окна установки программы и runtime, настройки и компактные диалоги |
 
+Состав приложения собирается **один раз** в Program (`AppServices`): конфиг и `ConfigService`, `RuntimeLayout`, логгер, инспектор процессов, `ProcessSupervisor`, автозапуск, диспетчер действий `ZapretActionExecutor`. Контекст трея и формы получают готовые зависимости; сервисы в обработчиках не создаются. Главное окно и меню трея потребляют один интерфейс `IZapretManagerCommands` (реализует `TrayApplicationContext`) — добавление действия это правка интерфейса и контекста.
+
 ## Основные функции и реализация
 
 ### 1. Установка runtime (первый запуск)
@@ -111,9 +113,15 @@ powershell -ExecutionPolicy Bypass -File .\tools\install-local.ps1      # пос
 ```
 
 - Запуск без установки — параметр `--no-install` (в IDE подставляется из `Properties/launchSettings.json`).
-- `install-local.ps1` нужен потому, что у тестовых сборок одна версия, а установщик сравнивает только её. Скрипт просит работающий менеджер закрыться сигналом «завершись», заменяет exe и запускает новый (останется подтвердить UAC); runtime и настройки не трогаются.
+- `install-local.ps1` нужен потому, что у тестовых сборок одна версия, а установщик сравнивает только её. Скрипт просит работающий менеджер закрыться служебным аргументом `--request-primary-exit <папка>` (имя pipe для папки вычисляет само приложение — протокол `SingleInstanceService` нигде снаружи не дублируется), заменяет exe и запускает новый (останется подтвердить UAC); runtime и настройки не трогаются.
 - Релиз: поднять `<Version>` в `ZapretManager.App.csproj` и отправить тег `v<версия>` — остальное делает `.github/workflows/release.yml`.
 
 ## Дополнительно
 
 - Подробности для пользователя — в `README.md`.
+
+## Покрытие тестами
+
+Покрыто поведенческими тестами: обновления runtime (`UpdateService`, `RuntimeValidator`, `RuntimeUpdateCoordinator`), диспетчер действий `ZapretActionExecutor` (маппинг видов действий, исключения, отмена с восстановлением), автовыбор (`StrategyAutoSelectionService` + probe/handshake), установка и удаление (`AppInstaller`, `ExecutableReplacer`), single-instance, автозапуск, форматирование итогов (`StrategyCheckFormatter`), защита перед Kill (`WinwsProcessInspector.MatchesExpectedProcess`), классификатор отказа UAC (`ElevationService`).
+
+Без тестов сознательно: чисто UI-склейка `TrayApplicationContext` (потоки и диалоги), оркестрации первого запуска (`InstallFlow`/`UninstallFlow`/`RuntimeBootstrapForm`), мониторинг состояния в трее. WinForms-тесты бегут последовательно (`DisableTestParallelization` в `AssemblyInfo.cs`): параллельный запуск коллекций на MTA-потоках давал flaky-взаимовлияние.

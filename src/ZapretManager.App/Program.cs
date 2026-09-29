@@ -13,6 +13,14 @@ static class Program
     {
         ApplicationConfiguration.Initialize();
         var launchOptions = ApplicationLaunchOptions.Parse(args);
+
+        // Служебный вызов install-local.ps1: имя pipe знает только SingleInstanceService.
+        if (launchOptions.RequestPrimaryExitDirectory is not null)
+        {
+            new SingleInstanceService(launchOptions.RequestPrimaryExitDirectory).RequestPrimaryExit();
+            return;
+        }
+
         var installPaths = InstallPaths.ForCurrentUser();
         var executablePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, InstallPaths.ExecutableName);
 
@@ -122,7 +130,7 @@ static class Program
 
         if (bootstrapResult.Config.StartWithWindows && !launchOptions.IsAutostart)
         {
-            var autostartResult = services.AutostartService.EnsureEnabled();
+            var autostartResult = services.AutostartService.SetEnabled(enabled: true);
             if (!autostartResult.IsSuccess)
             {
                 logger.Info(autostartResult.Message);

@@ -1,6 +1,7 @@
 # .NET / IDE
 **/bin/
 **/obj/
+**/TestResults/
 .vs/
 *.csproj.user
 *.user

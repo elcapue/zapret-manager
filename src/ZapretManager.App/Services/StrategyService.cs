@@ -5,6 +5,8 @@ namespace ZapretManager.App.Services;
 
 public static class StrategyService
 {
+    public const string StrategyFilePattern = "general*.bat";
+
     public static IReadOnlyList<StrategyInfo> DiscoverStrategies(string runtimeDirectory, string? selectedStrategy = null)
     {
         if (!Directory.Exists(runtimeDirectory))
@@ -12,7 +14,7 @@ public static class StrategyService
             return Array.Empty<StrategyInfo>();
         }
 
-        return Directory.GetFiles(runtimeDirectory, "general*.bat")
+        return Directory.GetFiles(runtimeDirectory, StrategyFilePattern)
             .Select(path => new StrategyInfo(
                 Path.GetFileName(path),
                 path,

@@ -15,7 +15,7 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Test
-        run: dotnet test ZapretManager.sln -c Release
+        run: dotnet test ZapretManager.sln -c Release --collect:"XPlat Code Coverage"
 
       # Single-file publish ломается иначе, чем обычная сборка — прогоняем на каждый push,
       # чтобы не узнавать о поломке в момент релиза.
